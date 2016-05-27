@@ -1,0 +1,40 @@
+#-*- coding: utf-8 -*-
+import scrapy
+from scrapy.selector import Selector
+
+class UrlGenerator(object):
+
+    def __init__(self, url_pattern, max_depth, entity_path):
+        self.url_pattern = url_pattern
+        self.max_depth = max_depth
+        self.entity_path = entity_path
+
+    def __iter__(self):
+        with open(self.entity_path) as f:
+            for line in f:
+                line = line.strip()
+                for i in range(self.max_depth):
+                    yield self.url_pattern % (line, i)
+
+
+class AmazonSpider(scrapy.Spider):
+    name = 'amazon'
+    url = UrlGenerator("https://www.amazon.cn/s/?field-keywords=%s&page=%d", 10, "./entity/test_entity.txt")
+
+    def start_requests(self):
+        for url in self.url:
+            yield scrapy.Request(url, self.parse)
+
+    def parse(self, response):
+        product = response.selector.css("a.s-access-detail-page")
+        for e in product:
+            print e
+        # product = soup.find_all("a", class_="s-access-detail-page")
+        # for d in product:
+        #     # 编码问题
+        #     title = d['title'].encode('utf-8')
+        #     if title in self.title_set:
+        #         continue
+        #     self.title_set.add(title)
+        #     logger.info("seed word= %s, page = %d, thread_name = %s, title = %s " % (item, page, self.name, title))
+        #     self.out_queue.put(title)
